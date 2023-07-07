@@ -167,6 +167,9 @@ class SI_Chip_EC extends SI_Offsite_Processors {
       }
 
       $checkout->mark_page_complete( SI_Checkouts::PAYMENT_PAGE );
+
+      $invoice->save_post_meta(['_chip_purchase_id' => $payment['id']]);
+
       wp_redirect( $payment['checkout_url'] );
       exit();
     }
@@ -274,14 +277,20 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
   public function process_payment( SI_Checkouts $checkout, SI_Invoice $invoice ) {
 
+    $chip = new Chip_Sprout_Invoice_API( self::$api_secret_key, self::$api_brand_id, false );
+
+    $purchase_id = $invoice->get_post_meta('_chip_purchase_id');
+
+    $payment = $chip->get_payment($purchase_id);
+
     // create new payment
     $payment_id = SI_Payment::new_payment( array(
       'payment_method' => $this->get_payment_method(),
       'invoice' => $invoice->get_id(),
-      'amount' => '33',
+      'amount' => $payment['payment']['amount'] / 100,
       'data' => array(
         'live' => false,
-        'api_response' => array('test' => 'cuba'),
+        'api_response' => $payment,
         'payment_token' => 'notoken',
       ),
     ), SI_Payment::STATUS_AUTHORIZED );
