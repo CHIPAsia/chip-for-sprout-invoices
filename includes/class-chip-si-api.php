@@ -66,6 +66,12 @@ class Chip_Sprout_Invoice_API
     return $result;
   }
 
+  public function capture_payment( $payment_id, $params ) {
+    $result = $this->call( 'POST', "/purchases/{$payment_id}/capture/", $params );
+
+    return $result;
+  }
+
   public function refund_payment( $payment_id, $params ) {
     $result = $this->call( 'POST', "/purchases/{$payment_id}/refund/", $params );
 

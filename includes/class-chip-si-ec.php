@@ -80,6 +80,8 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
     // Add Recurring button
     add_action( 'recurring_payments_profile_info', array( __CLASS__, 'chip_profile_link' ) );
+
+    add_action( 'si_manually_capture_purchase', array( $this, 'manually_capture_purchase' ), 10 );
   }
 
   /**
@@ -277,30 +279,47 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
   public function process_payment( SI_Checkouts $checkout, SI_Invoice $invoice ) {
 
+    if ($invoice->get_status() == 'complete') {
+      $payment = SI_Payment::find_by_meta( SI_Payment::POST_TYPE, array('_payment_invoice' => $invoice->get_id()) );
+
+      return SI_Payment::get_instance($payment[0]);
+    }
+
     $chip = new Chip_Sprout_Invoice_API( self::$api_secret_key, self::$api_brand_id, false );
 
     $purchase_id = $invoice->get_post_meta('_chip_purchase_id');
 
-    $payment = $chip->get_payment($purchase_id);
+    $chip_payment = $chip->get_payment($purchase_id);
+
+    if ($chip_payment['status'] == 'hold') {
+      $payment_status = SI_Payment::STATUS_AUTHORIZED;
+    } elseif ($chip_payment['status'] == 'paid') {
+      $payment_status = SI_Payment::STATUS_COMPLETE;
+    } else {
+      return false;
+    }
 
     // create new payment
     $payment_id = SI_Payment::new_payment( array(
       'payment_method' => $this->get_payment_method(),
       'invoice' => $invoice->get_id(),
-      'amount' => $payment['payment']['amount'] / 100,
+      'amount' => $chip_payment['payment']['amount'] / 100,
       'data' => array(
-        'live' => false,
-        'api_response' => $payment,
-        'payment_token' => 'notoken',
+        'api_response' => $chip_payment,
       ),
-    ), SI_Payment::STATUS_AUTHORIZED );
+    ), $payment_status );
 
     if ( ! $payment_id ) {
       return false;
     }
 
     $payment = SI_Payment::get_instance( $payment_id );
-    do_action( 'payment_authorized', $payment );
+
+    if ($chip_payment['status'] == 'hold') {
+      do_action( 'payment_authorized', $payment );
+    } elseif ($chip_payment['status'] == 'paid') {
+      do_action( 'payment_complete', $payment );
+    }
 
     // $this->maybe_create_recurring_payment_profiles( $invoice, $payment );
 
@@ -310,6 +329,28 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
   private function get_currency_code( $invoice_id ) {
     return apply_filters( 'si_currency_code', self::$currency_code, $invoice_id, self::PAYMENT_METHOD );
+  }
+
+  public function manually_capture_purchase( SI_Payment $payment ) {
+    $this->capture_payment( $payment );
+  }
+
+  public function capture_payment( SI_Payment $payment ) {
+    if ( $payment->get_status() == SI_Payment::STATUS_AUTHORIZED ) {
+      $payment_data = $payment->get_post_meta('_payment_data');
+
+      $chip = new Chip_Sprout_Invoice_API( self::$api_secret_key, self::$api_brand_id, false );
+
+      $chip_payment = $chip->capture_payment($payment_data['api_response']['id'], array());
+
+      if ( $chip_payment['status'] == 'paid' ) {
+        $payment->set_status( SI_Payment::STATUS_COMPLETE );
+        do_action( 'payment_complete', $payment );
+      } else {
+        $payment->set_status( SI_Payment::STATUS_VOID );
+      } 
+    }
+
   }
 }
 SI_Chip_EC::register();
