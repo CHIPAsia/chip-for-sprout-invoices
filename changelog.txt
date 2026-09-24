@@ -1,5 +1,8 @@
 == Changelog ==
 
+= 1.9.9 2026-09-24 =
+* [Add your changelog entry here]
+
 = 1.1.2 2026-09-24 =
 * Added - Documentation covering the currency formatting step MYR needs. Sprout Invoices ships USD/$ as its default and does not switch automatically for MYR, so a fresh install could render MYR amounts with a dollar sign.
 * Added - FAQ entries for the supported currency and for the dollar sign on an MYR invoice.
