@@ -12,8 +12,12 @@
 * Fixed - A failed CHIP API call during checkout surfaced as a fatal error instead of a message the customer could act on. Every API response is now validated before it is read.
 * Fixed - The payment page showed a PayPal icon and hardcoded line items ("test product name", "test name") instead of the invoice's own line items and the paying customer.
 * Fixed - Calling the payment processor raised a fatal error on the undefined `PAYER_ID` constant.
+* Fixed - A non-MYR invoice would be charged as though it were MYR, collecting the wrong amount. The invoice's own currency is now authoritative and is refused when it is not the currency CHIP settles in.
+* Fixed - Concurrent callbacks created two payment records for one gateway purchase. Recording a purchase now takes a lock around its check-then-create.
+* Fixed - Refunding a payment that had no acquirer failed with a vague gateway error. The Refund action now checks the gateway's refund availability and says why.
+* Fixed - The customer was returned to the invoice with no confirmation that the payment went through.
 * Changed - The customer is returned to the invoice with a status message instead of an anonymous callback URL.
-* Changed - Amounts are converted to minor units through string-based rounding, so a total such as RM 28.99 is no longer sent as 2898.9999999999995.
+* Changed - Amounts are converted to minor units through string-based rounding, so a total such as RM 19.99 is no longer sent as 1998.9999999999998.
 
 = 1.0.0 - 2023-05-30 =
 * New - Intial Release

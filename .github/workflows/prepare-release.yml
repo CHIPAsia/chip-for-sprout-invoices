@@ -1,0 +1,107 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.0)'
+        required: true
+        type: string
+
+jobs:
+  bump-and-pr:
+    name: Bump Version and Open PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Version must be in X.Y.Z format (e.g., 1.2.0)"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+      - name: Check version does not already exist
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "❌ Error: Tag v${VERSION} already exists."
+            exit 1
+          fi
+          if grep -q "^= ${VERSION} " changelog.txt; then
+            echo "❌ Error: Changelog entry for ${VERSION} already exists."
+            exit 1
+          fi
+          echo "✅ Version ${VERSION} is new"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version across files
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          # bump-version.sh asserts its own output and exits non-zero without
+          # staging when a file did not take the change.
+          bash ./scripts/bump-version.sh --yes "$VERSION"
+
+      - name: Commit changes to release branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          BRANCH="release/v${VERSION}"
+
+          git checkout -b "$BRANCH"
+          git commit -m "Bump version to ${VERSION}"
+          git push origin "$BRANCH"
+          echo "✅ Pushed branch ${BRANCH}"
+
+      - name: Create PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          BRANCH="release/v${VERSION}"
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "⚠️ PR #$EXISTING_PR already exists for branch $BRANCH"
+            exit 1
+          fi
+
+          CHANGELOG_BODY=$(sed -n '/^== Changelog ==/{n;n;:a;p;n;/^$/!ba}' readme.txt)
+
+          {
+            echo "## Release v${VERSION}"
+            echo ""
+            echo "### Changelog"
+            printf '%s\n' "${CHANGELOG_BODY}"
+            echo ""
+            echo "### Checklist"
+            echo "- [ ] Review changelog accuracy"
+            echo "- [ ] Verify the version is bumped in the header, \`SA_ADDON_CHIP_VERSION\`, and \`readme.txt\`"
+            echo "- [ ] After merge, create and push tag \`v${VERSION}\` to trigger the GitHub release"
+          } > pr_body.md
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Release v${VERSION}" \
+            --body-file pr_body.md
+
+          rm -f pr_body.md
+          echo "✅ Created PR for v${VERSION}"

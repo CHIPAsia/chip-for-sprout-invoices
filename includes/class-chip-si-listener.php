@@ -132,7 +132,8 @@ class Chip_Sprout_Invoices_Listener {
 	 * @return void
 	 */
 	public function handle_callback() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- External gateway callback: no nonce exists; authenticated by shared passphrase plus signature verification.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// External gateway callback: no nonce exists; authenticated by passphrase + signature.
 		if ( ! isset( $_GET[ self::CALLBACK_KEY ] ) ) {
 			return;
 		}
@@ -204,7 +205,10 @@ class Chip_Sprout_Invoices_Listener {
 			return false;
 		}
 
-		Chip_Sprout_Invoices_Helper::log( 'signature verification failed, falling back to API lookup', array( 'purchase_id' => $lookup ) );
+		Chip_Sprout_Invoices_Helper::log(
+			'signature verification failed, falling back to API lookup',
+			array( 'purchase_id' => $lookup )
+		);
 
 		$purchase = SI_Chip_EC::api()->get_payment( $lookup );
 
@@ -217,7 +221,8 @@ class Chip_Sprout_Invoices_Listener {
 	 * @return void
 	 */
 	public function handle_redirect() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- External gateway redirect: validated by static passphrase.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// External gateway redirect; validated by static passphrase.
 		if ( ! isset( $_GET[ self::REDIRECT_KEY ] ) ) {
 			return;
 		}
@@ -327,7 +332,8 @@ class Chip_Sprout_Invoices_Listener {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding the gateway's signature, not obfuscating code.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		// Decoding the gateway signature, not obfuscating code.
 		$decoded = base64_decode( $signature, true );
 
 		if ( false === $decoded ) {

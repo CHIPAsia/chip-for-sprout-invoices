@@ -1,0 +1,123 @@
+name: Plugin checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Tier 1: syntax + PHP compatibility across the supported range.
+
+  build:
+    name: Prepare plugin folder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare plugin folder for CI
+        run: |
+          mkdir -p ci-build/chip-for-sprout-invoices
+          git archive HEAD | tar -x -C ci-build/chip-for-sprout-invoices
+          echo "✅ Plugin folder prepared"
+          ls -la ci-build/chip-for-sprout-invoices/
+
+      - name: Verify no dev files shipped
+        run: |
+          set -e
+          for path in composer.json phpcs.xml .gitignore README.md; do
+            if [ -e "ci-build/chip-for-sprout-invoices/$path" ]; then
+              echo "❌ $path is marked export-ignore but is still in the archive"
+              exit 1
+            fi
+          done
+          echo "✅ Dev files are excluded from the release archive"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chip-for-sprout-invoices-build
+          path: ci-build/
+          retention-days: 5
+
+  php-compatibility:
+    name: PHP ${{ matrix.php-version }} Compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: [ '7.4', '8.0', '8.2', '8.4', '8.5' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+
+      - name: Syntax check
+        run: |
+          find . -name '*.php' -not -path './vendor/*' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: Install PHPCompatibility
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --dev squizlabs/php_codesniffer dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp:"*"
+          echo "$(composer global config bin-dir --absolute)" >> $GITHUB_PATH
+
+      - name: Check PHP ${{ matrix.php-version }} Compatibility
+        run: |
+          phpcs --standard=PHPCompatibilityWP \
+            --runtime-set testVersion ${{ matrix.php-version }} \
+            --extensions=php \
+            --ignore=vendor,node_modules,assets .
+
+  phpunit:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
+
+  # Tier 2: coding standards.
+
+  standards:
+    name: Coding standards
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHPCS (WordPress standards)
+        run: vendor/bin/phpcs --standard=phpcs.xml .

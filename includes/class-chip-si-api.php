@@ -23,7 +23,7 @@ if ( ! defined( 'SI_CHIP_ROOT_URL' ) ) {
  * failure reason is kept in `get_last_error()` so the admin log can explain
  * what actually went wrong instead of a generic failure message.
  */
-class Chip_Sprout_Invoice_API {
+class Chip_Sprout_Invoices_API {
 
 	/**
 	 * Secret key.
@@ -333,8 +333,11 @@ class Chip_Sprout_Invoice_API {
 			$described        = self::describe_error_body( $decoded );
 			$this->last_error = ( '' !== $described )
 				? $described
-				/* translators: %d: HTTP status code returned by the payment gateway */
-				: sprintf( __( 'Payment gateway returned HTTP %d.', 'chip-for-sprout-invoices' ), $this->last_response_code );
+				: sprintf(
+					/* translators: %d: HTTP status code returned by the payment gateway */
+					__( 'Payment gateway returned HTTP %d.', 'chip-for-sprout-invoices' ),
+					$this->last_response_code
+				);
 			return null;
 		}
 

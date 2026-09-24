@@ -238,11 +238,11 @@ class Chip_Sprout_Invoices_Helper {
 	 * so exactly one identifier per configured group is sent. Falls back to a
 	 * preference order when the availability lookup fails.
 	 *
-	 * @param array         $whitelist  Configured identifiers.
-	 * @param string        $currency   Currency code.
-	 * @param int           $amount     Amount in minor units.
-	 * @param SI_Invoice    $invoice    Invoice, for cache/context.
-	 * @param Chip_Sprout_Invoice_API $api API client.
+	 * @param array                    $whitelist  Configured identifiers.
+	 * @param string                   $currency   Currency code.
+	 * @param int                      $amount     Amount in minor units.
+	 * @param SI_Invoice               $invoice    Invoice, for cache/context.
+	 * @param Chip_Sprout_Invoices_API $api API client.
 	 * @return array
 	 */
 	public static function resolve_whitelist( $whitelist, $currency, $amount, SI_Invoice $invoice, $api ) {

@@ -54,12 +54,18 @@ class Chip_Sprout_Invoices_Refund {
 			'si-chip-refund',
 			'siChipRefund',
 			array(
-				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-				'action'     => 'si_chip_refund',
-				'confirm'    => __( 'Refund this payment at CHIP? This cannot be undone.', 'chip-for-sprout-invoices' ),
-				'partialHint' => __( 'Leave empty to refund the full amount, or enter an amount in minor units (sen).', 'chip-for-sprout-invoices' ),
-				'working'    => __( 'Refunding...', 'chip-for-sprout-invoices' ),
-				'failed'     => __( 'Refund failed. Check the logs for details.', 'chip-for-sprout-invoices' ),
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'action'      => 'si_chip_refund',
+				'confirm'     => __(
+					'Refund this payment at CHIP? This cannot be undone.',
+					'chip-for-sprout-invoices'
+				),
+				'partialHint' => __(
+					'Leave empty to refund the full amount, or enter an amount in minor units (sen).',
+					'chip-for-sprout-invoices'
+				),
+				'working'     => __( 'Refunding...', 'chip-for-sprout-invoices' ),
+				'failed'      => __( 'Refund failed. Check the logs for details.', 'chip-for-sprout-invoices' ),
 			)
 		);
 	}
@@ -73,7 +79,10 @@ class Chip_Sprout_Invoices_Refund {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
 		if ( ! current_user_can( 'manage_sprout_invoices_payments' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not allowed to refund payments.', 'chip-for-sprout-invoices' ) ), 403 );
+			wp_send_json_error(
+				array( 'message' => __( 'You are not allowed to refund payments.', 'chip-for-sprout-invoices' ) ),
+				403
+			);
 		}
 
 		$payment_id = isset( $_POST['payment_id'] ) ? absint( wp_unslash( $_POST['payment_id'] ) ) : 0;
@@ -112,11 +121,17 @@ class Chip_Sprout_Invoices_Refund {
 		$purchase_id = $payment->get_post_meta( SI_Chip_EC::PURCHASE_ID_META );
 
 		if ( ! $purchase_id ) {
-			return new WP_Error( 'si_chip_no_purchase', __( 'This payment has no CHIP purchase attached.', 'chip-for-sprout-invoices' ) );
+			return new WP_Error(
+				'si_chip_no_purchase',
+				__( 'This payment has no CHIP purchase attached.', 'chip-for-sprout-invoices' )
+			);
 		}
 
 		if ( SI_Payment::STATUS_COMPLETE !== $payment->get_status() ) {
-			return new WP_Error( 'si_chip_not_refundable', __( 'Only completed payments can be refunded.', 'chip-for-sprout-invoices' ) );
+			return new WP_Error(
+				'si_chip_not_refundable',
+				__( 'Only completed payments can be refunded.', 'chip-for-sprout-invoices' )
+			);
 		}
 
 		// The gateway decides whether a purchase can be refunded, and asking
@@ -136,7 +151,10 @@ class Chip_Sprout_Invoices_Refund {
 					'si_chip_not_refundable_here',
 					sprintf(
 						/* translators: %s: the gateway's refund availability value */
-						__( 'CHIP cannot refund this payment (refund availability: %s). Refund it from the CHIP dashboard instead.', 'chip-for-sprout-invoices' ),
+						__(
+							'CHIP cannot refund this payment (refund availability: %s). Refund at the CHIP dashboard.',
+							'chip-for-sprout-invoices'
+						),
 						$availability
 					)
 				);
@@ -197,7 +215,8 @@ class Chip_Sprout_Invoices_Refund {
 				)
 			);
 
-			return __( 'CHIP accepted the refund and is waiting on the acquirer. The payment will show as refunded once it completes.', 'chip-for-sprout-invoices' );
+			return __( 'CHIP accepted the refund and is waiting on the acquirer.', 'chip-for-sprout-invoices' )
+				. ' ' . __( 'The payment will show as refunded once it completes.', 'chip-for-sprout-invoices' );
 		}
 
 		$payment->set_status( SI_Payment::STATUS_REFUND );

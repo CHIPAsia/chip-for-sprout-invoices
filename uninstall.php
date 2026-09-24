@@ -29,7 +29,8 @@ foreach ( $si_chip_options as $si_chip_option ) {
 // Payment method lookups are cached per currency and amount.
 global $wpdb;
 
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup of this plugin's own transients on uninstall.
+// One-off cleanup of this plugin's own transients on uninstall.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
 	$wpdb->prepare(
 		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",

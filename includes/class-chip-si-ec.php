@@ -1,5 +1,4 @@
 <?php
-
 /**
  * CHIP offsite payment processor for Sprout Invoices.
  *
@@ -170,11 +169,15 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		$purchase_id = $payment->get_post_meta( self::PURCHASE_ID_META );
 
 		if ( ! $purchase_id ) {
-			return '<span class="description">' . esc_html__( 'No gateway record.', 'chip-for-sprout-invoices' ) . '</span>';
+			return '<span class="description">'
+				. esc_html__( 'No gateway record.', 'chip-for-sprout-invoices' )
+				. '</span>';
 		}
 
 		if ( SI_Payment::STATUS_COMPLETE !== $payment->get_status() ) {
-			return '<span class="description">' . esc_html__( 'Not refundable.', 'chip-for-sprout-invoices' ) . '</span>';
+			return '<span class="description">'
+				. esc_html__( 'Not refundable.', 'chip-for-sprout-invoices' )
+				. '</span>';
 		}
 
 		return sprintf(
@@ -209,11 +212,14 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 				'weight'      => 200,
 				'description' => sprintf(
 					/* translators: %s: URL of the CHIP merchant portal */
-					__( 'Accept payments through CHIP. Brand ID and Secret Key are found in your <a href="%s" target="_blank" rel="noopener noreferrer">CHIP merchant dashboard</a>.', 'chip-for-sprout-invoices' ),
+					__(
+						'Accept CHIP payments. Find your keys in the <a href="%s">CHIP dashboard</a>.',
+						'chip-for-sprout-invoices'
+					),
 					'https://portal.chip-in.asia/collect/developers'
 				),
 				'settings'    => array(
-					self::API_BRAND_ID_OPTION               => array(
+					self::API_BRAND_ID_OPTION      => array(
 						'label'  => __( 'Brand ID', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'text',
@@ -221,15 +227,18 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 							'description' => __( 'CHIP Brand ID (a UUID).', 'chip-for-sprout-invoices' ),
 						),
 					),
-					self::API_SECRET_KEY_OPTION             => array(
+					self::API_SECRET_KEY_OPTION    => array(
 						'label'  => __( 'Secret Key', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'text',
 							'default'     => get_option( self::API_SECRET_KEY_OPTION, '' ),
-							'description' => __( 'Server-side only. Never share this key.', 'chip-for-sprout-invoices' ),
+							'description' => __(
+								'Server-side only. Never share this key.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
-					self::CURRENCY_CODE_OPTION              => array(
+					self::CURRENCY_CODE_OPTION     => array(
 						'label'  => __( 'Currency Code', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'text',
@@ -238,49 +247,67 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 							'description' => __( 'CHIP supports MYR only.', 'chip-for-sprout-invoices' ),
 						),
 					),
-					self::CANCEL_URL_OPTION                 => array(
+					self::CANCEL_URL_OPTION        => array(
 						'label'  => __( 'Cancel URL', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'text',
 							'default'     => get_option( self::CANCEL_URL_OPTION, '' ),
-							'description' => __( 'Where a customer who cancels on the CHIP page is sent. Defaults to the invoice.', 'chip-for-sprout-invoices' ),
+							'description' => __(
+								'Where a customer who cancels on the CHIP page is sent. Defaults to the invoice.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
-					self::DUE_STRICT_OPTION                 => array(
+					self::DUE_STRICT_OPTION        => array(
 						'label'  => __( 'Due Strict', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'checkbox',
 							'default'     => get_option( self::DUE_STRICT_OPTION, '' ),
 							'value'       => 'yes',
-							'description' => __( 'Block payment once the Due Strict Timing below has passed.', 'chip-for-sprout-invoices' ),
+							'description' => __(
+								'Block payment once the Due Strict Timing below has passed.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
-					self::DUE_STRICT_TIMING_OPTION          => array(
+					self::DUE_STRICT_TIMING_OPTION => array(
 						'label'  => __( 'Due Strict Timing (minutes)', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'text',
 							'default'     => get_option( self::DUE_STRICT_TIMING_OPTION, '' ),
 							'attributes'  => array( 'class' => 'small-text' ),
-							'description' => __( 'Leave empty to keep invoices payable indefinitely.', 'chip-for-sprout-invoices' ),
+							'description' => __(
+								'Leave empty to keep invoices payable indefinitely.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
-					self::PAYMENT_METHOD_WHITELIST          => array(
+					self::PAYMENT_METHOD_WHITELIST => array(
 						'label'  => __( 'Payment Method Whitelist', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'select',
 							'options'     => self::get_whitelist_options(),
 							'default'     => array_values( $whitelist ),
-							'attributes'  => array( 'multiple' => 'multiple', 'size' => 8 ),
-							'description' => __( 'Restrict which payment methods are offered. Leave empty to offer everything the brand supports.', 'chip-for-sprout-invoices' ),
+							'attributes'  => array(
+								'multiple' => 'multiple',
+								'size'     => 8,
+							),
+							'description' => __(
+								'Restrict which payment methods are offered. Leave empty for all.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
-					Chip_Sprout_Invoices_Helper::LOG_OPTION  => array(
+					Chip_Sprout_Invoices_Helper::LOG_OPTION => array(
 						'label'  => __( 'Save Logs', 'chip-for-sprout-invoices' ),
 						'option' => array(
 							'type'        => 'checkbox',
 							'default'     => Chip_Sprout_Invoices_Helper::is_logging_enabled(),
 							'value'       => 'yes',
-							'description' => __( 'Record gateway requests and callbacks under Tools &rarr; Sprout Invoices records. Troubleshooting only.', 'chip-for-sprout-invoices' ),
+							'description' => __(
+								'Log gateway requests and callbacks. Troubleshooting only.',
+								'chip-for-sprout-invoices'
+							),
 						),
 					),
 				),
@@ -333,12 +360,15 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		// There is no form on the payment page to validate.
 		remove_action( 'si_checkout_action_' . SI_Checkouts::PAYMENT_PAGE, array( $checkout, 'process_payment_page' ) );
 
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only routing check; the checkout nonce is verified by SI_Checkouts::handle_action() before this action fires.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		// Read-only routing check; the nonce is verified by SI_Checkouts::handle_action() first.
 		if ( isset( $_GET['token'] ) || ! isset( $_REQUEST[ SI_Checkouts::CHECKOUT_ACTION ] ) ) {
 			return;
 		}
 
-		if ( SI_Checkouts::PAYMENT_PAGE !== sanitize_text_field( wp_unslash( $_REQUEST[ SI_Checkouts::CHECKOUT_ACTION ] ) ) ) {
+		$action = sanitize_text_field( wp_unslash( $_REQUEST[ SI_Checkouts::CHECKOUT_ACTION ] ) );
+
+		if ( SI_Checkouts::PAYMENT_PAGE !== $action ) {
 			return;
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
@@ -400,7 +430,9 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
 		// The URL comes from the gateway over HTTPS, never from user input.
 		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-		wp_redirect( esc_url_raw( apply_filters( 'si_chip_checkout_url', $purchase['checkout_url'], $purchase, $invoice ) ) );
+		$checkout_url = apply_filters( 'si_chip_checkout_url', $purchase['checkout_url'], $purchase, $invoice );
+
+		wp_safe_redirect( esc_url_raw( $checkout_url ) );
 		exit;
 	}
 
@@ -497,7 +529,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 			'failure_redirect' => Chip_Sprout_Invoices_Listener::get_redirect_url( $invoice->get_id(), 'error' ),
 			'cancel_redirect'  => $this->get_cancel_url( $invoice ),
 			'send_receipt'     => true,
-			'creator_agent'    => Chip_Sprout_Invoices_Helper::truncate( 'SproutInvoices: ' . SA_ADDON_CHIP_VERSION, 32 ),
+			'creator_agent'    => Chip_Sprout_Invoices_Helper::truncate(
+				'SproutInvoices: ' . SA_ADDON_CHIP_VERSION,
+				32
+			),
 			'reference'        => (string) $invoice->get_id(),
 			// `platform` is a gateway-side allow-list (web, api, ios, android,
 			// and a few named e-commerce modules). There is no Sprout Invoices
@@ -733,7 +768,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 
 		if ( ! $payment ) {
 			self::set_message(
-				__( 'Your payment could not be confirmed. Please contact us before trying again.', 'chip-for-sprout-invoices' ),
+				__(
+					'Your payment could not be confirmed. Please contact us before trying again.',
+					'chip-for-sprout-invoices'
+				),
 				self::MESSAGE_STATUS_ERROR
 			);
 
@@ -786,7 +824,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		$locked    = self::acquire_lock( $lock_name );
 
 		if ( ! $locked ) {
-			Chip_Sprout_Invoices_Helper::log( 'could not acquire the purchase lock', array( 'payment_id' => $purchase_id ) );
+			Chip_Sprout_Invoices_Helper::log(
+				'could not acquire the purchase lock',
+				array( 'payment_id' => $purchase_id )
+			);
 		}
 
 		try {
@@ -814,7 +855,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		global $wpdb;
 
 		// GET_LOCK returns 1 when taken, 0 on timeout and NULL on error.
-		$result = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, %d )', $lock_name, self::LOCK_TIMEOUT_SECONDS ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$result = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT GET_LOCK( %s, %d )', $lock_name, self::LOCK_TIMEOUT_SECONDS )
+		);
 
 		return '1' === (string) $result;
 	}
@@ -828,7 +872,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 	private static function release_lock( $lock_name ) {
 		global $wpdb;
 
-		$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock_name ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->get_var(
+			$wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock_name )
+		);
 	}
 
 	/**
@@ -836,10 +883,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 	 *
 	 * Only ever reached with the purchase lock held.
 	 *
-	 * @param array          $purchase    CHIP purchase payload.
+	 * @param array           $purchase    CHIP purchase payload.
 	 * @param SI_Invoice|null $invoice    Invoice, resolved when omitted.
-	 * @param string         $purchase_id CHIP purchase ID.
-	 * @param string         $status      Gateway status.
+	 * @param string          $purchase_id CHIP purchase ID.
+	 * @param string          $status      Gateway status.
 	 * @return SI_Payment|false
 	 */
 	private static function create_payment_for_purchase( $purchase, $invoice, $purchase_id, $status ) {
@@ -865,7 +912,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		$amount = Chip_Sprout_Invoices_Helper::from_minor_units( $amount_in_sen );
 
 		if ( $amount < 0.01 ) {
-			Chip_Sprout_Invoices_Helper::log( 'purchase reports a non-positive amount, skipping', array( 'payment_id' => $purchase_id ) );
+			Chip_Sprout_Invoices_Helper::log(
+				'purchase reports a non-positive amount, skipping',
+				array( 'payment_id' => $purchase_id )
+			);
 
 			return false;
 		}
@@ -904,7 +954,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		);
 
 		if ( ! $payment_id ) {
-			Chip_Sprout_Invoices_Helper::log( 'failed to create the payment record', array( 'payment_id' => $purchase_id ) );
+			Chip_Sprout_Invoices_Helper::log(
+				'failed to create the payment record',
+				array( 'payment_id' => $purchase_id )
+			);
 
 			return false;
 		}
@@ -1001,10 +1054,10 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 	/**
 	 * API client built from the configured credentials.
 	 *
-	 * @return Chip_Sprout_Invoice_API
+	 * @return Chip_Sprout_Invoices_API
 	 */
 	public static function api() {
-		return new Chip_Sprout_Invoice_API(
+		return new Chip_Sprout_Invoices_API(
 			(string) get_option( self::API_SECRET_KEY_OPTION, '' ),
 			(string) get_option( self::API_BRAND_ID_OPTION, '' )
 		);
@@ -1088,7 +1141,8 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 		}
 
 		Chip_Sprout_Invoices_Helper::log(
-			'CHIP payment voided locally: no money was refunded. Use the Refund action in the CHIP column to refund at the gateway.',
+			'CHIP payment voided locally: no money was refunded. '
+				. 'Use the Refund action in the CHIP column to refund at the gateway.',
 			array( 'payment_id' => $payment_id )
 		);
 	}

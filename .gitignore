@@ -1,4 +1,23 @@
 **/.DS_Store
 
 package-lock.json
+yarn.lock
 /node_modules/
+
+# Build artifacts
+/vendor/
+composer.lock
+/dist/
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache
+
+# Local environment / test tooling
+.wp-env.json
+docker-compose.yml
+Dockerfile
+
+# Release workflow temporary files
+diff.txt
+changelog_entry.md

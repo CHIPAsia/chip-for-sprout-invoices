@@ -1,0 +1,41 @@
+name: Create Release Zip
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-release:
+    name: Build and Upload Release Zip
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare plugin folder
+        run: |
+          # The folder name MUST match the plugin slug: WordPress decides what
+          # to install from the archive's single top-level directory.
+          mkdir -p dist/chip-for-sprout-invoices
+          git archive HEAD | tar -x -C dist/chip-for-sprout-invoices
+          echo "✅ Prepared plugin folder"
+          ls -la dist/chip-for-sprout-invoices/
+
+      - name: Create zip files
+        run: |
+          cd dist
+          zip -r ../chip-for-sprout-invoices.zip chip-for-sprout-invoices
+          cd ..
+          VERSION=$(grep "Version:" chip-for-sprout-invoices.php | head -1 | awk '{print $3}')
+          cp chip-for-sprout-invoices.zip "chip-for-sprout-invoices-${VERSION}.zip"
+          echo "✅ Created the versionless and ${VERSION} zips"
+
+      - name: Upload release assets
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            chip-for-sprout-invoices.zip \
+            chip-for-sprout-invoices-*.zip \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

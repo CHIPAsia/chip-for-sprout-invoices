@@ -1,14 +1,14 @@
 <?php
-
 /**
  * Plugin Name: CHIP for Sprout Invoices
- * Plugin URI: https://wordpress.org/plugins/chip-for-sprout-invoices/
+ * Plugin URI: https://github.com/CHIPAsia/chip-for-sprout-invoices
  * Description: CHIP - Better Payment & Business Solutions
  * Version: 1.1.0
  * Requires at least: 5.9
  * Requires PHP: 7.4
  * Author: Chip In Sdn Bhd
  * Author URI: https://www.chip-in.asia
+ * Text Domain: chip-for-sprout-invoices
  *
  * Copyright: © 2026 CHIP
  * License: GNU General Public License v3.0

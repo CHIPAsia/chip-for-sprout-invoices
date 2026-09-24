@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<ruleset name="CHIP for Sprout Invoices">
+	<description>PHPCS ruleset for the CHIP for Sprout Invoices plugin.</description>
+
+	<!-- What to scan -->
+	<file>.</file>
+
+	<!-- Only scan PHP files -->
+	<arg name="extensions" value="php"/>
+
+	<!-- Exclude paths -->
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/tests/*</exclude-pattern>
+
+	<!-- Use WordPress coding standards -->
+	<rule ref="WordPress">
+		<!-- The entry point's and uninstall.php's names are fixed by WordPress;
+		     neither is a class file. -->
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<!-- Set minimum supported versions -->
+	<config name="minimum_supported_wp_version" value="5.9"/>
+	<config name="testVersion" value="7.4-8.5"/>
+
+	<!-- Text domain -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="chip-for-sprout-invoices"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Sprout Invoices registers this capability; it is not ours to rename. -->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_sprout_invoices_payments"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Allowed prefixes.
+	     Ours: Chip_Sprout_Invoices*, CHIP_FOR_SPROUT_INVOICES, SA_ADDON_CHIP,
+	     si_chip*, SI_CHIP*.
+	     Sprout Invoices' own, which this plugin must fire or extend and cannot
+	     rename: the SI_Chip_EC processor registers under that name in Sprout's
+	     processor registry, and the actions below are the ones Sprout itself
+	     fires (si_log) or the ones a Sprout gateway is expected to fire so the
+	     rest of the ecosystem reacts (payment_complete is what Sprout's own
+	     processors and its notification controller use; payment_authorized is
+	     what Sprout gateway integrations fire for a pre-authorized payment, and
+	     what addons such as the AffiliateWP integration listen for). -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="chip_for_sprout_invoices"/>
+				<element value="Chip_Sprout_Invoices"/>
+				<element value="CHIP_FOR_SPROUT_INVOICES"/>
+				<element value="SA_ADDON_CHIP"/>
+				<element value="si_chip"/>
+				<element value="SI_Chip"/>
+				<element value="SI_CHIP"/>
+				<element value="chip_si"/>
+				<element value="si_log"/>
+				<element value="si_set_array_data"/>
+				<element value="si_currency_code"/>
+				<element value="payment_complete"/>
+				<element value="payment_authorized"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The CHIP callback endpoint is not a form: it carries no nonce (CHIP
+	     authenticates it with the X-Signature header instead). -->
+	<rule ref="WordPress.Security.NonceVerification">
+		<exclude-pattern>includes/class-chip-si-listener.php</exclude-pattern>
+	</rule>
+
+	<!-- base64_decode is used to verify the CHIP webhook signature. -->
+	<rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+		<exclude-pattern>includes/class-chip-si-listener.php</exclude-pattern>
+	</rule>
+
+	<!-- Hook callbacks must accept the full filter signature even when a
+	     parameter is unused. -->
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+	</rule>
+
+	<!-- Line length -->
+	<rule ref="Generic.Files.LineLength">
+		<properties>
+			<property name="lineLimit" value="120"/>
+			<property name="absoluteLineLimit" value="0"/>
+		</properties>
+	</rule>
+</ruleset>

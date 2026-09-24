@@ -32,20 +32,13 @@ Any method your brand does not support is simply not shown at checkout: the plug
 * PHP 7.4 or greater
 * Sprout Invoices 20.4 or greater
 
-= Automatic installation =
+= Installation =
 
-Automatic installation is the easiest option as WordPress handles the file transfers itself and you don’t need to leave your web browser. To do an automatic install of, log in to your WordPress dashboard, navigate to the Plugins menu and click Add New.
+1. Install and activate [Sprout Invoices](https://wordpress.org/plugins/sprout-invoices/) (20.4 or newer).
+2. [Download the latest release](https://github.com/CHIPAsia/chip-for-sprout-invoices/releases/latest/download/chip-for-sprout-invoices.zip) and upload it via **Plugins &rarr; Add New &rarr; Upload Plugin**.
+3. Activate **CHIP for Sprout Invoices**.
 
-In the search field type "CHIP for Sprout Invoices" and click Search Plugins. Once you’ve found our plugin you can view details about it such as the point release, rating and description. Most importantly of course, you can install it by simply clicking “Install Now”.
-
-= Manual installation =
-
-The manual installation method involves downloading our plugin and uploading it to your webserver via your favorite FTP application. The
-WordPress codex contains [instructions on how to do this here](http://codex.wordpress.org/Managing_Plugins#Manual_Plugin_Installation).
-
-= Updating =
-
-Automatic updates should work like a charm; as always though, ensure you backup your site just in case.
+This plugin is distributed from GitHub, so WordPress cannot find or update it from the WordPress.org plugin directory.
 
 = Configuration =
 
@@ -93,10 +86,17 @@ This plugin rely on CHIP API ([SI_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
 * Added - Save Logs setting, writing to Sprout Invoices' developer log.
 * Added - Server-to-server callback handling, so an invoice is settled even when the customer never returns from the payment page.
 * Added - `X-Signature` verification of every callback against the account public key.
+* Added - Support for FPX B2B1, Maestro, Atome, GrabPay, Maybank QR and Touch 'n Go eWallet, alongside FPX B2C, DuitNow QR, ShopeePay, Visa and Mastercard.
 * Fixed - Purchases were rejected by CHIP with "due cannot be in the past" whenever the Timing setting was left empty, so no payment could complete. The due limit is now omitted when it is not configured.
 * Fixed - A failed CHIP API call during checkout surfaced as a fatal error instead of a message the customer could act on. Every API response is now validated before it is read.
 * Fixed - The payment page showed a PayPal icon and hardcoded line items ("test product name", "test name") instead of the invoice's own line items and the paying customer.
 * Fixed - Calling the payment processor raised a fatal error on the undefined `PAYER_ID` constant.
+* Fixed - A non-MYR invoice would be charged as though it were MYR, collecting the wrong amount. The invoice's own currency is now authoritative and is refused when it is not the currency CHIP settles in.
+* Fixed - Concurrent callbacks created two payment records for one gateway purchase. Recording a purchase now takes a lock around its check-then-create.
+* Fixed - Refunding a payment that had no acquirer failed with a vague gateway error. The Refund action now checks the gateway's refund availability and says why.
+* Fixed - The customer was returned to the invoice with no confirmation that the payment went through.
+* Changed - The customer is returned to the invoice with a status message instead of an anonymous callback URL.
+* Changed - Amounts are converted to minor units through string-based rounding, so a total such as RM 19.99 is no longer sent as 1998.9999999999998.
 
 == Links ==
 
