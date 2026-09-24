@@ -1,5 +1,10 @@
 name: Create Release Zip
 
+# Attaches the zip to a release created by hand in the GitHub UI. The normal
+# path is release.yml, which is triggered by a tag push and builds and uploads
+# the zip itself — it cannot rely on this workflow, because a release created
+# with GITHUB_TOKEN does not trigger further workflow runs.
+
 on:
   release:
     types: [created]

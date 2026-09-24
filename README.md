@@ -59,9 +59,11 @@ composer compat     # PHPCompatibilityWP, 7.4+
 
 ## Release
 
-Pushing a `vX.Y.Z` tag creates a GitHub release and attaches the built zip. The manual
-`prepare-release` workflow bumps the version and opens the release PR. Use
-`bash scripts/bump-version.sh <version>` locally to bump every file at once.
+Pushing a `vX.Y.Z` tag creates the GitHub release, builds the zip and attaches both the
+versionless and versioned copies — so
+`releases/latest/download/chip-for-sprout-invoices.zip` always resolves. The workflow refuses
+to release when the tag, the plugin header and `readme.txt`'s `Stable tag` disagree, and it
+verifies the archive before publishing it.
 
 ## Other
 

@@ -1,12 +1,15 @@
 name: Create Release
 
 # The sibling CHIP plugins create the GitHub release from a tag push inside their
-# deploy workflow. This plugin is not on WordPress.org, so there is no deploy
-# workflow — this is that step on its own. Pushing a vX.Y.Z tag is the release.
+# WordPress.org deploy workflow. This plugin is not on WordPress.org, so there is
+# no deploy workflow — this is that step on its own. Pushing a vX.Y.Z tag is the
+# release.
 #
-# release-zip.yml then runs on `release: created` and attaches the zip. Chaining
-# the two means the release always exists before the asset upload runs, which a
-# single `gh release upload` on the tag alone cannot guarantee.
+# The zip is built HERE rather than left to release-zip.yml's `release: created`
+# trigger: an event raised by GITHUB_TOKEN does not start a new workflow run
+# (GitHub docs, "Triggering a workflow from a workflow"), so that trigger would
+# never fire for a release this workflow creates. release-zip.yml stays for
+# releases created by hand in the UI.
 
 on:
   push:
@@ -32,8 +35,7 @@ jobs:
         run: |
           HEADER_VERSION=$(grep "Version:" chip-for-sprout-invoices.php | head -1 | awk '{print $3}')
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          echo "header=$HEADER_VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$HEADER_VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 tag v${TAG_VERSION}, header ${HEADER_VERSION}"
 
           if [ "$HEADER_VERSION" != "$TAG_VERSION" ]; then
@@ -45,15 +47,15 @@ jobs:
       - name: Check the Stable tag matches too
         run: |
           STABLE=$(grep "^Stable tag:" readme.txt | awk '{print $3}')
-          if [ "$STABLE" != "${{ steps.vars.outputs.tag }}" ]; then
-            echo "❌ readme.txt Stable tag (${STABLE}) does not match the tag (${{ steps.vars.outputs.tag }})."
+          if [ "$STABLE" != "${{ steps.vars.outputs.version }}" ]; then
+            echo "❌ readme.txt Stable tag (${STABLE}) does not match the tag (v${{ steps.vars.outputs.version }})."
             exit 1
           fi
           echo "✅ Version is consistent across the header and readme.txt"
 
-      - name: Extract release notes from the changelog
+      - name: Extract the release notes from the changelog
         run: |
-          # Pull the newest entry: the version line plus its bullet points.
+          # The newest entry: the version line plus its bullet points.
           awk '/^== Changelog ==/ { getline; getline; print; while (getline > 0 && NF > 0) print }' \
             changelog.txt > release_notes.md
           echo "--- release notes ---"
@@ -63,7 +65,45 @@ jobs:
             exit 1
           fi
 
-      - name: Create the release
+      - name: Build the release zip
+        run: |
+          # The folder name MUST match the plugin slug: WordPress decides what to
+          # install from the archive's single top-level directory. git archive
+          # honours .gitattributes, so the dev files stay out.
+          mkdir -p dist/chip-for-sprout-invoices
+          git archive HEAD | tar -x -C dist/chip-for-sprout-invoices
+          echo "--- archive contents ---"
+          find dist/chip-for-sprout-invoices -maxdepth 1 -mindepth 1 | sort
+
+          cd dist
+          zip -qr ../chip-for-sprout-invoices.zip chip-for-sprout-invoices
+          cd ..
+          cp chip-for-sprout-invoices.zip "chip-for-sprout-invoices-${{ steps.vars.outputs.version }}.zip"
+          echo "✅ Built the versionless and versioned zips"
+
+      - name: Verify the zip is installable before publishing it
+        run: |
+          set -e
+          # A single top-level slug directory, and no dev files.
+          TOP_LEVEL=$(unzip -Z1 chip-for-sprout-invoices.zip | awk -F/ '{print $1}' | sort -u)
+          if [ "$TOP_LEVEL" != "chip-for-sprout-invoices" ]; then
+            echo "❌ The archive must contain exactly one top-level 'chip-for-sprout-invoices/' directory."
+            echo "   Found: $TOP_LEVEL"
+            exit 1
+          fi
+          for path in composer.json phpcs.xml phpunit.xml .gitignore tests vendor .github; do
+            if unzip -Z1 chip-for-sprout-invoices.zip | grep -qE "(^|/)${path}(/|$)"; then
+              echo "❌ $path is in the release archive; it must be export-ignored."
+              exit 1
+            fi
+          done
+          if ! unzip -Z1 chip-for-sprout-invoices.zip | grep -q "chip-for-sprout-invoices/chip-for-sprout-invoices.php"; then
+            echo "❌ The plugin entry point is missing from the archive."
+            exit 1
+          fi
+          echo "✅ The archive has one slug directory, the entry point, and no dev files"
+
+      - name: Create the release and attach the zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -75,23 +115,22 @@ jobs:
             gh release create "$TAG" --title "$TAG" --notes-file release_notes.md
             echo "✅ Created the release $TAG"
           fi
+          gh release upload "$TAG" \
+            chip-for-sprout-invoices.zip \
+            "chip-for-sprout-invoices-${{ steps.vars.outputs.version }}.zip" \
+            --clobber
 
-      - name: Verify the zip landed on the release
+      - name: Verify what the release actually carries
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.ref_name }}"
-          # release-zip.yml runs on the release event; give it a moment, then
-          # confirm rather than reporting success on an empty release.
-          for attempt in $(seq 1 20); do
-            ASSETS=$(gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null || true)
-            if echo "$ASSETS" | grep -q "chip-for-sprout-invoices.zip"; then
-              echo "✅ Release $TAG carries chip-for-sprout-invoices.zip"
-              echo "$ASSETS"
-              exit 0
+          ASSETS=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+          echo "$ASSETS"
+          for asset in chip-for-sprout-invoices.zip "chip-for-sprout-invoices-${{ steps.vars.outputs.version }}.zip"; do
+            if ! echo "$ASSETS" | grep -qx "$asset"; then
+              echo "❌ $asset is missing from release $TAG."
+              exit 1
             fi
-            echo "waiting for the release zip (attempt ${attempt}/20)…"
-            sleep 15
           done
-          echo "❌ chip-for-sprout-invoices.zip never appeared on release $TAG."
-          exit 1
+          echo "✅ Release $TAG carries both zips; releases/latest/download/chip-for-sprout-invoices.zip resolves"
