@@ -1,0 +1,97 @@
+name: Create Release
+
+# The sibling CHIP plugins create the GitHub release from a tag push inside their
+# deploy workflow. This plugin is not on WordPress.org, so there is no deploy
+# workflow — this is that step on its own. Pushing a vX.Y.Z tag is the release.
+#
+# release-zip.yml then runs on `release: created` and attaches the zip. Chaining
+# the two means the release always exists before the asset upload runs, which a
+# single `gh release upload` on the tag alone cannot guarantee.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read the version from the plugin header
+        id: vars
+        run: |
+          HEADER_VERSION=$(grep "Version:" chip-for-sprout-invoices.php | head -1 | awk '{print $3}')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "header=$HEADER_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 tag v${TAG_VERSION}, header ${HEADER_VERSION}"
+
+          if [ "$HEADER_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ The tag (v${TAG_VERSION}) does not match the plugin header (${HEADER_VERSION})."
+            echo "   Release from a commit where the version was bumped, not before it."
+            exit 1
+          fi
+
+      - name: Check the Stable tag matches too
+        run: |
+          STABLE=$(grep "^Stable tag:" readme.txt | awk '{print $3}')
+          if [ "$STABLE" != "${{ steps.vars.outputs.tag }}" ]; then
+            echo "❌ readme.txt Stable tag (${STABLE}) does not match the tag (${{ steps.vars.outputs.tag }})."
+            exit 1
+          fi
+          echo "✅ Version is consistent across the header and readme.txt"
+
+      - name: Extract release notes from the changelog
+        run: |
+          # Pull the newest entry: the version line plus its bullet points.
+          awk '/^== Changelog ==/ { getline; getline; print; while (getline > 0 && NF > 0) print }' \
+            changelog.txt > release_notes.md
+          echo "--- release notes ---"
+          cat release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "❌ No changelog entry was found for this release."
+            exit 1
+          fi
+
+      - name: Create the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file release_notes.md
+            echo "✅ Updated the existing release $TAG"
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file release_notes.md
+            echo "✅ Created the release $TAG"
+          fi
+
+      - name: Verify the zip landed on the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          # release-zip.yml runs on the release event; give it a moment, then
+          # confirm rather than reporting success on an empty release.
+          for attempt in $(seq 1 20); do
+            ASSETS=$(gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null || true)
+            if echo "$ASSETS" | grep -q "chip-for-sprout-invoices.zip"; then
+              echo "✅ Release $TAG carries chip-for-sprout-invoices.zip"
+              echo "$ASSETS"
+              exit 0
+            fi
+            echo "waiting for the release zip (attempt ${attempt}/20)…"
+            sleep 15
+          done
+          echo "❌ chip-for-sprout-invoices.zip never appeared on release $TAG."
+          exit 1
