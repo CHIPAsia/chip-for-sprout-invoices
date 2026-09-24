@@ -1,0 +1,12 @@
+{
+	"core": null,
+	"port": 8880,
+	"testsEnvironment": false,
+	"plugins": [
+		"https://downloads.wordpress.org/plugin/sprout-invoices.zip",
+		"https://downloads.wordpress.org/plugin/plugin-check.zip"
+	],
+	"mappings": {
+		"wp-content/plugins/chip-for-sprout-invoices": "."
+	}
+}

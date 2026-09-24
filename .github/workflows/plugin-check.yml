@@ -1,4 +1,4 @@
-name: Plugin checks
+name: WordPress Plugin Check
 
 on:
   push:
@@ -11,39 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Tier 1: syntax + PHP compatibility across the supported range.
-
-  build:
-    name: Prepare plugin folder
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Prepare plugin folder for CI
-        run: |
-          mkdir -p ci-build/chip-for-sprout-invoices
-          git archive HEAD | tar -x -C ci-build/chip-for-sprout-invoices
-          echo "✅ Plugin folder prepared"
-          ls -la ci-build/chip-for-sprout-invoices/
-
-      - name: Verify no dev files shipped
-        run: |
-          set -e
-          for path in composer.json phpcs.xml .gitignore README.md; do
-            if [ -e "ci-build/chip-for-sprout-invoices/$path" ]; then
-              echo "❌ $path is marked export-ignore but is still in the archive"
-              exit 1
-            fi
-          done
-          echo "✅ Dev files are excluded from the release archive"
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: chip-for-sprout-invoices-build
-          path: ci-build/
-          retention-days: 5
+  # ─── Tier 1: PHP compatibility (run in parallel) ───
 
   php-compatibility:
     name: PHP ${{ matrix.php-version }} Compatibility
@@ -51,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: [ '7.4', '8.0', '8.2', '8.4', '8.5' ]
+        php-version: ['7.4', '8.0', '8.2', '8.4', '8.5']
 
     steps:
       - name: Checkout
@@ -73,12 +41,12 @@ jobs:
           composer global require --dev squizlabs/php_codesniffer dealerdirect/phpcodesniffer-composer-installer phpcompatibility/phpcompatibility-wp:"*"
           echo "$(composer global config bin-dir --absolute)" >> $GITHUB_PATH
 
+      - name: Verify PHPCS Standards
+        run: phpcs -i
+
       - name: Check PHP ${{ matrix.php-version }} Compatibility
         run: |
-          phpcs --standard=PHPCompatibilityWP \
-            --runtime-set testVersion ${{ matrix.php-version }} \
-            --extensions=php \
-            --ignore=vendor,node_modules,assets .
+          phpcs --standard=PHPCompatibilityWP --runtime-set testVersion ${{ matrix.php-version }} --extensions=php --ignore=vendor,node_modules,assets .
 
   phpunit:
     name: PHPUnit Tests
@@ -91,7 +59,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           coverage: none
 
       - name: Install Composer dependencies
@@ -100,12 +68,11 @@ jobs:
       - name: Run PHPUnit
         run: vendor/bin/phpunit
 
-  # Tier 2: coding standards.
+  # ─── Tier 2: PHPCS (depends on nothing, runs in parallel) ───
 
-  standards:
-    name: Coding standards
+  phpcs:
+    name: PHP CodeSniffer (WordPress Standards)
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,11 +80,57 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          coverage: none
+          php-version: '8.4'
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+      - name: Install WordPress Coding Standards
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --dev squizlabs/php_codesniffer dealerdirect/phpcodesniffer-composer-installer wp-coding-standards/wpcs:"^3.0"
+          echo "$(composer global config bin-dir --absolute)" >> $GITHUB_PATH
 
-      - name: PHPCS (WordPress standards)
-        run: vendor/bin/phpcs --standard=phpcs.xml .
+      - name: Verify PHPCS Standards
+        run: phpcs -i
+
+      - name: Run PHPCS
+        run: phpcs --standard=phpcs.xml .
+        continue-on-error: false
+
+  # ─── Tier 3: the WordPress.org Plugin Check tool itself ───
+  # This plugin is not published on WordPress.org, but Plugin Check is the
+  # review tool every CHIP plugin is held to, so it runs here too.
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    needs: [phpunit, phpcs]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build plugin folder for Plugin Check
+        run: |
+          mkdir -p ci-build/chip-for-sprout-invoices
+          git archive HEAD | tar -x -C ci-build/chip-for-sprout-invoices
+          if [ -f .wp-env.json ]; then
+            cp .wp-env.json ci-build/chip-for-sprout-invoices/
+          fi
+          echo "✅ Plugin folder prepared"
+          ls -la ci-build/chip-for-sprout-invoices/
+
+      - name: Verify no dev files shipped
+        run: |
+          set -e
+          for path in composer.json composer.lock phpcs.xml phpunit.xml .gitignore .gitattributes README.md CONTRIBUTING.md tests scripts vendor; do
+            if [ -e "ci-build/chip-for-sprout-invoices/$path" ]; then
+              echo "❌ $path is marked export-ignore but is still in the archive"
+              exit 1
+            fi
+          done
+          echo "✅ Dev files are excluded from the release archive"
+
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './ci-build/chip-for-sprout-invoices'
+          exclude-directories: 'vendor,node_modules'

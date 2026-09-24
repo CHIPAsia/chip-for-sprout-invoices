@@ -14,7 +14,6 @@ composer.lock
 .phpunit.cache
 
 # Local environment / test tooling
-.wp-env.json
 docker-compose.yml
 Dockerfile
 
