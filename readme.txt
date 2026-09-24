@@ -45,8 +45,17 @@ This plugin is distributed from GitHub, so WordPress cannot find or update it fr
 1. Go to **Sprout Invoices &rarr; Settings &rarr; Payments**.
 2. Enable **CHIP** as a payment processor.
 3. Enter your **Brand ID** and **Secret Key** from the CHIP merchant dashboard (Developers section).
+4. Go to **Sprout Invoices &rarr; Settings &rarr; Currency Formatting** and set **Currency Symbol** to `RM` and **International Currency Symbol** to `MYR`. Sprout Invoices ships these as `$` and `USD` and only follows a few currencies automatically, so without this your invoices render MYR amounts with a dollar sign.
 
 == Frequently Asked Questions ==
+
+= Which currency is supported? =
+
+MYR. CHIP settles Malaysian merchants in Malaysian Ringgit. An invoice in any other currency is refused with a message rather than charged, because the gateway would read its minor units as sen and take the wrong amount.
+
+= Why does my invoice show a dollar sign? =
+
+Sprout Invoices ships `USD` and `$` as its default currency formatting and does not switch automatically for MYR. Set **Currency Symbol** to `RM` and **International Currency Symbol** to `MYR` under **Sprout Invoices &rarr; Settings &rarr; Currency Formatting**. This is a Sprout Invoices setting, not something the plugin changes for you.
 
 = Where is the Brand ID and Secret Key located? =
 

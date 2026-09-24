@@ -23,6 +23,11 @@ This module adds CHIP payment method option to your [Sprout Invoices](https://wo
 Go to **Sprout Invoices** -> **Settings** -> **Payments**, enable **CHIP**, then set the
 **Brand ID** and **Secret Key** from your CHIP merchant dashboard (Developers section).
 
+Then set the currency formatting: **Sprout Invoices** -> **Settings** -> **Currency
+Formatting**, with **Currency Symbol** `RM` and **International Currency Symbol** `MYR`.
+Sprout Invoices defaults to `$`/`USD` and only follows a few currencies automatically, so
+without this step MYR invoices render with a dollar sign.
+
 Optional settings on the same screen:
 
 | Setting | Description |
