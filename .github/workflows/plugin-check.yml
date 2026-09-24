@@ -112,9 +112,8 @@ jobs:
         run: |
           mkdir -p ci-build/chip-for-sprout-invoices
           git archive HEAD | tar -x -C ci-build/chip-for-sprout-invoices
-          if [ -f .wp-env.json ]; then
-            cp .wp-env.json ci-build/chip-for-sprout-invoices/
-          fi
+          # Do NOT copy .wp-env.json in: Plugin Check rejects hidden files
+          # ("Hidden files are not permitted."), and it is a local dev config.
           echo "✅ Plugin folder prepared"
           ls -la ci-build/chip-for-sprout-invoices/
 

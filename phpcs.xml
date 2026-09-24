@@ -74,15 +74,14 @@
 	</rule>
 
 	<!-- The CHIP callback endpoint is not a form: it carries no nonce (CHIP
-	     authenticates it with the X-Signature header instead). -->
-	<rule ref="WordPress.Security.NonceVerification">
-		<exclude-pattern>includes/class-chip-si-listener.php</exclude-pattern>
-	</rule>
+	     authenticates it with the X-Signature header instead). The ignores are
+	     per-line in the listener; there is deliberately no file-level exclusion
+	     here, because one would hide every other sniff in that file too. -->
+	<rule ref="WordPress.Security.NonceVerification"/>
 
-	<!-- base64_decode is used to verify the CHIP webhook signature. -->
-	<rule ref="WordPress.PHP.DiscouragedPHPFunctions">
-		<exclude-pattern>includes/class-chip-si-listener.php</exclude-pattern>
-	</rule>
+	<!-- base64_decode is used to verify the CHIP webhook signature. Ignored
+	     per-line at the call site, for the same reason as above. -->
+	<rule ref="WordPress.PHP.DiscouragedPHPFunctions"/>
 
 	<!-- Hook callbacks must accept the full filter signature even when a
 	     parameter is unused. -->
