@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 1.1.1 2026-09-24 =
+* Changed - The supported WordPress version is now 6.3 or newer, matching the other CHIP WordPress plugins. The previous 5.9 floor was not verified against any supported release.
+* Fixed - The release now reports the version of WordPress it was actually tested on.
+
 = 1.1.0 - 2026-09-24 =
 * Added - Refund and partial refund at CHIP from the payments screen, in a new CHIP column.
 * Added - Payment method whitelist setting.
