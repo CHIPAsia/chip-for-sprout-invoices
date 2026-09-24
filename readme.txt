@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip, sprout invoices, payment gateway, fpx, duitnow
 Requires at least: 6.3
 Tested up to: 7.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -79,24 +79,9 @@ This plugin rely on CHIP API ([SI_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
 
 == Changelog ==
 
-= 1.1.0 - 2026-09-24 =
-* Added - Refund and partial refund at CHIP from the payments screen, in a new CHIP column.
-* Added - Payment method whitelist setting.
-* Added - Due Strict and Due Strict Timing settings.
-* Added - Save Logs setting, writing to Sprout Invoices' developer log.
-* Added - Server-to-server callback handling, so an invoice is settled even when the customer never returns from the payment page.
-* Added - `X-Signature` verification of every callback against the account public key.
-* Added - Support for FPX B2B1, Maestro, Atome, GrabPay, Maybank QR and Touch 'n Go eWallet, alongside FPX B2C, DuitNow QR, ShopeePay, Visa and Mastercard.
-* Fixed - Purchases were rejected by CHIP with "due cannot be in the past" whenever the Timing setting was left empty, so no payment could complete. The due limit is now omitted when it is not configured.
-* Fixed - A failed CHIP API call during checkout surfaced as a fatal error instead of a message the customer could act on. Every API response is now validated before it is read.
-* Fixed - The payment page showed a PayPal icon and hardcoded line items ("test product name", "test name") instead of the invoice's own line items and the paying customer.
-* Fixed - Calling the payment processor raised a fatal error on the undefined `PAYER_ID` constant.
-* Fixed - A non-MYR invoice would be charged as though it were MYR, collecting the wrong amount. The invoice's own currency is now authoritative and is refused when it is not the currency CHIP settles in.
-* Fixed - Concurrent callbacks created two payment records for one gateway purchase. Recording a purchase now takes a lock around its check-then-create.
-* Fixed - Refunding a payment that had no acquirer failed with a vague gateway error. The Refund action now checks the gateway's refund availability and says why.
-* Fixed - The customer was returned to the invoice with no confirmation that the payment went through.
-* Changed - The customer is returned to the invoice with a status message instead of an anonymous callback URL.
-* Changed - Amounts are converted to minor units through string-based rounding, so a total such as RM 19.99 is no longer sent as 1998.9999999999998.
+= 1.1.1 2026-09-24 =
+* Changed - The supported WordPress version is now 6.3 or newer, matching the other CHIP WordPress plugins. The previous 5.9 floor was not verified against any supported release.
+* Fixed - The release now reports the version of WordPress it was actually tested on.
 
 == Links ==
 
