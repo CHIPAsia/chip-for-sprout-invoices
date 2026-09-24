@@ -428,11 +428,13 @@ class SI_Chip_EC extends SI_Offsite_Processors {
 			)
 		);
 
-		// The URL comes from the gateway over HTTPS, never from user input.
-		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+		// The URL comes from the gateway over HTTPS, never from user input, and
+		// it is external by design (the CHIP payment page). wp_safe_redirect()
+		// would refuse the host and strand the customer in wp-admin.
 		$checkout_url = apply_filters( 'si_chip_checkout_url', $purchase['checkout_url'], $purchase, $invoice );
 
-		wp_safe_redirect( esc_url_raw( $checkout_url ) );
+		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+		wp_redirect( esc_url_raw( $checkout_url ) );
 		exit;
 	}
 
