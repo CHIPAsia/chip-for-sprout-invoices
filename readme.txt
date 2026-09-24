@@ -3,7 +3,7 @@ Contributors: chipasia, wanzulnet
 Tags: chip, sprout invoices, payment gateway, fpx, duitnow
 Requires at least: 6.3
 Tested up to: 7.1
-Stable tag: 1.1.2
+Stable tag: 1.9.8
 Requires PHP: 7.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -88,9 +88,8 @@ This plugin rely on CHIP API ([SI_CHIP_ROOT_URL](https://gate.chip-in.asia)) as 
 
 == Changelog ==
 
-= 1.1.2 2026-09-24 =
-* Added - Documentation covering the currency formatting step MYR needs. Sprout Invoices ships USD/$ as its default and does not switch automatically for MYR, so a fresh install could render MYR amounts with a dollar sign.
-* Added - FAQ entries for the supported currency and for the dollar sign on an MYR invoice.
+= 1.9.8 2026-09-24 =
+* Fixed - Probe of the release workflow changelog handling
 
 == Links ==
 

@@ -3,7 +3,7 @@
  * Plugin Name: CHIP for Sprout Invoices
  * Plugin URI: https://github.com/CHIPAsia/chip-for-sprout-invoices
  * Description: CHIP - Better Payment & Business Solutions
- * Version: 1.1.2
+ * Version: 1.9.8
  * Requires at least: 6.3
  * Requires PHP: 7.4
  * Author: Chip In Sdn Bhd
@@ -61,7 +61,7 @@ class Chip_Sprout_Invoices {
 	 * @return void
 	 */
 	public function define() {
-		define( 'SA_ADDON_CHIP_VERSION', '1.1.2' );
+		define( 'SA_ADDON_CHIP_VERSION', '1.9.8' );
 		define( 'SA_ADDON_CHIP_FILE', __FILE__ );
 		define( 'SA_ADDON_CHIP_BASENAME', plugin_basename( SA_ADDON_CHIP_FILE ) );
 		define( 'SA_ADDON_CHIP_URL', plugin_dir_url( SA_ADDON_CHIP_FILE ) );
