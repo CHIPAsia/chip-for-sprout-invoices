@@ -7,6 +7,10 @@ on:
         description: 'Version to release (e.g., 1.2.0)'
         required: true
         type: string
+      changelog:
+        description: 'Optional changelog body, one "* Type - text" line per change. Derived from the commits when left empty.'
+        required: false
+        type: string
 
 jobs:
   bump-and-pr:
@@ -24,8 +28,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate version format
+        env:
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "❌ Error: Version must be in X.Y.Z format (e.g., 1.2.0)"
             exit 1
@@ -33,8 +38,9 @@ jobs:
           echo "✅ Version format valid: $VERSION"
 
       - name: Check version does not already exist
+        env:
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
           if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
             echo "❌ Error: Tag v${VERSION} already exists."
             exit 1
@@ -45,23 +51,73 @@ jobs:
           fi
           echo "✅ Version ${VERSION} is new"
 
+      # A release PR the bot commits on its own must never carry a placeholder
+      # changelog: nobody edits it after the fact, and whatever lands on main is
+      # what gets released. The entry is written outside the working tree because
+      # bump-version.sh stages everything with 'git add -A'.
+      - name: Build the changelog entry
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANGELOG_INPUT: ${{ github.event.inputs.changelog }}
+        run: |
+          set -euo pipefail
+          TODAY=$(date +%Y-%m-%d)
+
+          if [ -n "${CHANGELOG_INPUT:-}" ]; then
+            echo "📝 Using the supplied changelog body."
+            BODY="$CHANGELOG_INPUT"
+          else
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$LAST_TAG" ]; then
+              RANGE="${LAST_TAG}..HEAD"
+            else
+              RANGE="HEAD"
+            fi
+            echo "📝 Deriving the changelog from ${RANGE}."
+            BODY=$(git log "$RANGE" --no-merges --pretty=format:'%s' \
+              | grep -viE '^bump version to ' \
+              | sed 's/^/* /' || true)
+          fi
+
+          if [ -z "$(printf '%s' "$BODY" | sed '/^[[:space:]]*$/d')" ]; then
+            echo "❌ Error: empty changelog. Pass the changelog input, or check the commits since the last tag."
+            exit 1
+          fi
+
+          if printf '%s' "$BODY" | grep -q '\[Add your changelog entry here\]'; then
+            echo "❌ Error: the changelog is still the placeholder. Pass the changelog input."
+            exit 1
+          fi
+
+          # bump-version.sh expects the whole entry, header included.
+          {
+            echo "= ${VERSION} ${TODAY} ="
+            printf '%s\n' "$BODY"
+          } > "$RUNNER_TEMP/changelog_entry.md"
+
+          echo "📄 Changelog entry:"
+          cat "$RUNNER_TEMP/changelog_entry.md"
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version across files
+        env:
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
           # bump-version.sh asserts its own output and exits non-zero without
           # staging when a file did not take the change.
-          bash ./scripts/bump-version.sh --yes "$VERSION"
+          bash ./scripts/bump-version.sh --yes \
+            --changelog-file "$RUNNER_TEMP/changelog_entry.md" \
+            "$VERSION"
 
       - name: Commit changes to release branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
           BRANCH="release/v${VERSION}"
 
           git checkout -b "$BRANCH"
@@ -72,8 +128,8 @@ jobs:
       - name: Create PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
           BRANCH="release/v${VERSION}"
 
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' || echo "")
@@ -94,6 +150,7 @@ jobs:
             echo "### Checklist"
             echo "- [ ] Review changelog accuracy"
             echo "- [ ] Verify the version is bumped in the header, \`SA_ADDON_CHIP_VERSION\`, and \`readme.txt\`"
+            echo "- [ ] Click **Approve workflows to run** on this PR: a PR opened with \`GITHUB_TOKEN\` starts its checks in an approval-required state, so CI has not run until it is approved"
             echo "- [ ] After merge, create and push tag \`v${VERSION}\` to trigger the GitHub release"
           } > pr_body.md
 
