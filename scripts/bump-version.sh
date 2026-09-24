@@ -129,7 +129,12 @@ awk '
         skip = 1
         next
     }
-    skip && /^== / { skip = 0 }
+    skip && /^== / {
+        # The blank line separating the changelog from the next section is
+        # consumed by the skip above, so re-emit it here.
+        skip = 0
+        print ""
+    }
     skip { next }
     { print }
 ' readme.txt > readme.txt.tmp
