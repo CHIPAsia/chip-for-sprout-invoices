@@ -11,9 +11,22 @@ checkout sends the customer to a CHIP payment page, and CHIP's server-to-server 
 settles the invoice.
 
 - Pure PHP WordPress plugin — no JS build step, no Composer runtime dependencies.
-- PHP floor: **7.4**. Minimum WordPress: **5.9**. Minimum Sprout Invoices: **20.4**.
+- PHP floor: **7.4**. Minimum WordPress: **6.3**. Minimum Sprout Invoices: **20.4**.
 - Text domain: `chip-for-sprout-invoices`.
 - Plugin file: `chip-for-sprout-invoices.php`.
+
+The WordPress floor is **6.3**, matching the other CHIP WordPress plugins
+(`chip-for-woocommerce`, `givewp`, `gravity-forms`, `formidable-forms` all declare 6.3). It is
+declared in four places that must stay in step — the plugin header, `readme.txt` (twice: the
+header field and Minimum Requirements), `README.md`, and `phpcs.xml`'s
+`minimum_supported_wp_version`. `tests/Unit/Chip_Sprout_Invoices_MetadataTest.php` asserts they
+agree; run it before changing any of them.
+
+Do not set the floor to the lowest version the code happens to run on. The only WP function
+used here that is not ancient is `wp_timezone_string()` (5.3), and Sprout Invoices itself
+requires 5.1, so a literal reading gives 5.3 — but 5.9 and earlier are EOL and untested, and
+nothing in this repo was ever exercised on them. `Tested up to` must name a version actually
+tested: 7.1, which is what the end-to-end run uses.
 
 Note the plugin is **not published on WordPress.org**: it is distributed as a GitHub release
 zip, so there is no SVN deploy workflow. Do not add one.
