@@ -1,7 +1,7 @@
 === CHIP for Sprout Invoices ===
 Contributors: chipasia, wanzulnet
 Tags: chip, sprout invoices, payment gateway, fpx, duitnow
-Requires at least: 5.9
+Requires at least: 6.3
 Tested up to: 7.1
 Stable tag: 1.1.0
 Requires PHP: 7.4
@@ -28,7 +28,7 @@ Any method your brand does not support is simply not shown at checkout: the plug
 
 = Minimum Requirements =
 
-* WordPress 5.9 or greater
+* WordPress 6.3 or greater
 * PHP 7.4 or greater
 * Sprout Invoices 20.4 or greater
 

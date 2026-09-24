@@ -21,7 +21,7 @@
 	</rule>
 
 	<!-- Set minimum supported versions -->
-	<config name="minimum_supported_wp_version" value="5.9"/>
+	<config name="minimum_supported_wp_version" value="6.3"/>
 	<config name="testVersion" value="7.4-8.5"/>
 
 	<!-- Text domain -->

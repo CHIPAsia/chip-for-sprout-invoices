@@ -7,7 +7,7 @@ This module adds CHIP payment method option to your [Sprout Invoices](https://wo
 ## Compatibility
 
 - Sprout Invoices 20.4 or newer
-- WordPress 5.9 or newer
+- WordPress 6.3 or newer
 - PHP 7.4 or newer (8.0+ recommended)
 
 ## Installation
