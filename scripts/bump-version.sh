@@ -99,6 +99,21 @@ rm -f readme.txt.bak
 if [ -n "$CHANGELOG_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
     echo "📝 Using the supplied changelog from $CHANGELOG_FILE..."
     CHANGELOG_ENTRY=$(cat "$CHANGELOG_FILE")
+
+    # A changelog entry that carries only the version header, or nothing but
+    # blank lines, bumps the version and releases with an empty changelog: the
+    # entry passes every check below because those look for the header. Reject
+    # it here so no caller can ship a release that announces nothing.
+    if ! printf '%s\n' "$CHANGELOG_ENTRY" | grep -qE "^= ${NEW_VERSION} "; then
+        echo "❌ Changelog entry in $CHANGELOG_FILE has no '= ${NEW_VERSION} <date> =' header"
+        echo "   Expected the whole entry, header included."
+        exit 1
+    fi
+
+    if [ -z "$(printf '%s\n' "$CHANGELOG_ENTRY" | sed '/^[[:space:]]*$/d' | tail -n +2)" ]; then
+        echo "❌ Changelog entry in $CHANGELOG_FILE has no content below the header"
+        exit 1
+    fi
 else
     TODAY=$(date +%Y-%m-%d)
     CHANGELOG_ENTRY="= ${NEW_VERSION} ${TODAY} =
