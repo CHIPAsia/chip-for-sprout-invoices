@@ -1,0 +1,34 @@
+# Line Endings
+* text=auto
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.txt text eol=lf
+
+# Exclude dev files from the release zip
+*.md export-ignore
+node_modules/ export-ignore
+vendor/ export-ignore
+composer.lock export-ignore
+composer.json export-ignore
+package-lock.json export-ignore
+package.json export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.github/ export-ignore
+.wordpress-org/ export-ignore
+
+# WordPress.org SVN / release zip: exclude tests and dev config
+/tests/ export-ignore
+phpunit.xml export-ignore
+phpunit.xml.dist export-ignore
+/scripts/ export-ignore
+phpcs.xml export-ignore
+.distignore export-ignore
+.phpunit.result.cache export-ignore
+.wp-env.json export-ignore
+
+# Binary files
+*.png binary
+*.jpg binary
+*.woff2 binary
