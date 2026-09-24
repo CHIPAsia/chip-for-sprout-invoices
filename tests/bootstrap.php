@@ -189,5 +189,80 @@ if ( ! class_exists( 'SI_Invoice' ) ) {
 // The helper's log() fires `si_log`; WP_Mock records userFunction calls but
 // do_action on an unmocked action is a no-op under WP_Mock, which is fine.
 
+// ─── Sprout Invoices surface, reduced to what the plugin touches at load ───
+
+if ( ! class_exists( 'SI_Checkouts' ) ) {
+	/**
+	 * Test double for SI_Checkouts.
+	 */
+	class SI_Checkouts {
+		const CHECKOUT_ACTION   = 'si_checkout_action';
+		const PAYMENT_PAGE      = 'payment';
+		const REVIEW_PAGE       = 'review';
+		const CONFIRMATION_PAGE = 'confirmation';
+	}
+}
+
+if ( ! class_exists( 'SI_Payment' ) ) {
+	/**
+	 * Test double for SI_Payment.
+	 */
+	class SI_Payment {
+		const POST_TYPE          = 'sa_payment';
+		const STATUS_PENDING     = 'pending';
+		const STATUS_AUTHORIZED  = 'authorized';
+		const STATUS_COMPLETE    = 'publish';
+		const STATUS_PARTIAL     = 'payment-partial';
+		const STATUS_VOID        = 'void';
+		const STATUS_REFUND      = 'refunded';
+	}
+}
+
+if ( ! class_exists( 'SI_Client' ) ) {
+	/**
+	 * Test double for SI_Client.
+	 */
+	class SI_Client {
+	}
+}
+
+if ( ! class_exists( 'SI_Controller' ) ) {
+	/**
+	 * Test double for SI_Controller.
+	 */
+	class SI_Controller {
+	}
+}
+
+if ( ! class_exists( 'SI_Offsite_Processors' ) ) {
+	/**
+	 * Test double for Sprout Invoices' offsite processor base. Only the
+	 * members the plugin calls are present.
+	 */
+	class SI_Offsite_Processors {
+
+		/**
+		 * Registers a processor. Sprout stores these in the
+		 * `si_payment_processor` option; the double just records them.
+		 *
+		 * @param string $class Class name.
+		 * @param string $name  Public name.
+		 * @return void
+		 */
+		public static function add_payment_processor( $class, $name = '' ) {
+			$GLOBALS['sa_chip_test_processors'][ $class ] = $name;
+		}
+
+		/**
+		 * Processor slug.
+		 *
+		 * @return string
+		 */
+		public function get_slug() {
+			return '';
+		}
+	}
+}
+
 require_once dirname( __DIR__ ) . '/includes/class-chip-si-api.php';
 require_once dirname( __DIR__ ) . '/includes/class-chip-si-helper.php';
