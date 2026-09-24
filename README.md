@@ -1,8 +1,6 @@
 <img src="./assets/logo.svg" alt="drawing" width="50"/>
 
 # CHIP for Sprout Invoices
-[![WP compatibility](https://plugintests.com/plugins/wporg/chip-for-sprout-invoices/wp-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-sprout-invoices/latest)
-[![PHP compatibility](https://plugintests.com/plugins/wporg/chip-for-sprout-invoices/php-badge.svg)](https://plugintests.com/plugins/wporg/chip-for-sprout-invoices/latest)
 
 This module adds CHIP payment method option to your Sprout Invoices installation.
 
